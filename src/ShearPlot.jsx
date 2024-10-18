@@ -88,7 +88,7 @@ function ShearPlot({
           <circle r={4} fill="white"></circle>
           <text style={{
             font: '11px sans-serif',
-            fill: 'white',
+            fill: 'currentColor',
           }}
           >
             <tspan x="1em" y="1.1em">{`Length: ${tooltipData.beamLength.toFixed(2)} ft`}</tspan>
