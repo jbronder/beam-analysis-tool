@@ -35,8 +35,8 @@ function App() {
             <p>Moment Diagram, M (k-ft)</p>
             <MomentPlot data={smdData} height={175}/>
           {(Number.isFinite(smdData[0].deflection) &&
-            beamData.inertia !== 0 && 
-            beamData.elasticity !== 0) &&
+            beamData.inertia >= 0 &&
+            beamData.elasticity >= 0) &&
             <>
               <p>Deflection Diagram, Δ (in)</p>
               <DeflectionPlot data={smdData} height={175} />
