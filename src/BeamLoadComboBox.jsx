@@ -29,6 +29,7 @@ function BeamLoadComboBox({ onComboSelect }) {
               <Select.Label className="SelectLabel">Beam-Load Cases</Select.Label>
               <SelectItem value="1">Simple Beam - Uniform Distributed Load</SelectItem>
               <SelectItem value="7">Simple Beam - Concentrated Load At Center</SelectItem>
+              <SelectItem value="12">Cantilever Beam - Uniform Distributed Load</SelectItem>
               <SelectItem value="13">Cantilever Beam - Concentrated Load At Free End</SelectItem>
               <SelectItem value="15">Beam Pin-Fixed Ends - Uniform Distributed Load</SelectItem>
               <SelectItem value="23">Beam Fixed At Both Ends - Uniform Distributed Load</SelectItem>

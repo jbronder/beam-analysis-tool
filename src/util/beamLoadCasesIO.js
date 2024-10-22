@@ -13,6 +13,7 @@ function getInputs(blcCase) {
 
   switch (blcCase) {
     case '1':
+    case '12':
     case '15':
     case '23':
       specificInputs = [

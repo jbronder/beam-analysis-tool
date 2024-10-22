@@ -6,8 +6,9 @@
 const BLC_COMBO = {
   ONE : '1',       // 'simple-beam-uniform-distributed-load', 1 AISC
   SEVEN : '7',     // 'simple-beam-concentrated-load-at-center', 7 AISC
+  TWELVE : '12',   // 'cantilever-beam-uniform-distributed-load', 19 AISC
   THIRTEEN : '13', // 'cantilever-beam-concentrated-load-at-free-end', 22 AISC
-  FIFTEEN : '15',  // 'beam-fixed-at-one-end-uniform-distributed-load', 12 AISC
+  FIFTEEN : '15',  // 'beam-pin-fixed-uniform-distributed-load', 12 AISC
   TWENTYTHREE :
       '23', // 'beam-fixed-at-both-ends-uniform-distributed-load', 15 AISC
   TWENTYFOUR :
@@ -41,18 +42,24 @@ function calculateBeamLoadCombo(blc, beamInput) {
     results.deflection =
         (load * ((length * 12) ** 3)) / (48 * inertia * elasticity);
     break;
-  case BLC_COMBO.FIFTEEN: // 'beam-fixed-at-one-end-uniform-distributed-load'
-    results.positiveMoment = (9 / 128.0) * (load * (length ** 2));
-    results.negativeMoment = load * (length ** 2) / 8.0;
-    results.shear = (5 / 8.0) * (load * length); // max shear @ fixed support
+  case BLC_COMBO.TWELVE: // 'cantilever-beam-uniform-distributed-load'
+    results.negativeMoment = load * (length ** 2) / 2.0;
+    results.shear = load * length;
     results.deflection =
-        ((load / 12.0) * ((length * 12) ** 4)) / (185.0 * inertia * elasticity);
+        (load / 12.0) * ((length * 12.0) ** 4) / (8 * elasticity * inertia);
     break;
   case BLC_COMBO.THIRTEEN: // 'cantilever-beam-concentrated-load-at-free-end'
     results.negativeMoment = load * length;
     results.shear = load;
     results.deflection =
         load * ((length * 12) ** 3) / (3 * inertia * elasticity);
+    break;
+  case BLC_COMBO.FIFTEEN: // 'beam-pin-fixed-uniform-distributed-load'
+    results.positiveMoment = (9 / 128.0) * (load * (length ** 2));
+    results.negativeMoment = load * (length ** 2) / 8.0;
+    results.shear = (5 / 8.0) * (load * length); // max shear @ fixed support
+    results.deflection =
+        ((load / 12.0) * ((length * 12) ** 4)) / (185.0 * inertia * elasticity);
     break;
   case BLC_COMBO
       .TWENTYFOUR: // 'beam-fixed-at-both-ends-concentrated-load-at-center'
@@ -75,7 +82,15 @@ function calculateBeamLoadCombo(blc, beamInput) {
     return results;
   }
 
-  results.lOver = results.lOver = (1 / results.deflection) * length * 12;
+  // Computing L-over result
+  results.lOver = (1 / results.deflection) * length * 12;
+
+  // double the L-over result if it's a cantilever condition
+  switch (blc) {
+  case BLC_COMBO.TWELVE:
+  case BLC_COMBO.THIRTEEN:
+    results.lOver *= 2;
+  }
   return results;
 }
 
@@ -107,6 +122,9 @@ function generateSmdData(blc, beamInput, results, points) {
     break;
   case BLC_COMBO.SEVEN:
     smdData = makeBlcSeven(beamInput, xPoints);
+    break;
+  case BLC_COMBO.TWELVE:
+    smdData = makeBlcTwelve(beamInput, xPoints);
     break;
   case BLC_COMBO.THIRTEEN:
     smdData = makeBlcThirteen(beamInput, xPoints);
@@ -192,6 +210,34 @@ function makeBlcSeven(beamInput, xPoints) {
       mi = tempMiStack.pop();
       di = tempDiStack.pop();
     }
+
+    const smd = {
+      beamLength : xi,
+      shear : vi,
+      moment : mi,
+      deflection : di,
+    };
+    smdData.push(smd);
+  }
+  return smdData;
+}
+
+/**
+ * Generate shear, moment, and deflection beam data for beam-load case twelve.
+ * @param {Object} beamInput
+ * @param {number[]} xPoints
+ * @return {Object[]}
+ */
+function makeBlcTwelve(beamInput, xPoints) {
+  const smdData = [];
+
+  for (const xi of xPoints) {
+    const vi = beamInput.load * xi;
+    const mi = beamInput.load * (xi ** 2) / 2.0;
+    const di = (beamInput.load * (12.0 ** 3)) *
+               ((xi ** 4) - (4 * (beamInput.length ** 3) * xi) +
+                (3 * (beamInput.length ** 4))) /
+               (24 * beamInput.elasticity * beamInput.inertia)
 
     const smd = {
       beamLength : xi,
