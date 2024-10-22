@@ -5,6 +5,7 @@
 
 const BLC_COMBO = {
   ONE : '1',       // 'simple-beam-uniform-distributed-load', 1 AISC
+  FIVE : '5',      // 'simple-beam-linear-increasing-uniform-load', 2 AISC
   SEVEN : '7',     // 'simple-beam-concentrated-load-at-center', 7 AISC
   TWELVE : '12',   // 'cantilever-beam-uniform-distributed-load', 19 AISC
   THIRTEEN : '13', // 'cantilever-beam-concentrated-load-at-free-end', 22 AISC
@@ -36,6 +37,13 @@ function calculateBeamLoadCombo(blc, beamInput) {
     results.deflection = (5 / 384.0) * (load / 12.0) * ((length * 12) ** 4) *
                          (1 / inertia) * (1 / elasticity);
     break;
+  case BLC_COMBO.FIVE: // 'simple-beam-linear-increasing-uniform-load'
+    const totalLoad = (load * length * 0.5);
+    results.positiveMoment = 0.128 * totalLoad * length;
+    results.shear = (2 / 3) * totalLoad;
+    results.deflection =
+        0.01304 * totalLoad * ((length * 12) ** 3) / (inertia * elasticity);
+    break;
   case BLC_COMBO.SEVEN: // 'simple-beam-concentrated-load-at-center'
     results.positiveMoment = load * length / 4.0;
     results.shear = load / 2.0;
@@ -62,14 +70,6 @@ function calculateBeamLoadCombo(blc, beamInput) {
         ((load / 12.0) * ((length * 12) ** 4)) / (185.0 * inertia * elasticity);
     break;
   case BLC_COMBO
-      .TWENTYFOUR: // 'beam-fixed-at-both-ends-concentrated-load-at-center'
-    results.positiveMoment = load * length / 8.0;
-    results.negativeMoment = load * length / 8.0;
-    results.shear = load / 2.0;
-    results.deflection =
-        load * ((length * 12) ** 3) / (192.0 * inertia * elasticity);
-    break;
-  case BLC_COMBO
       .TWENTYTHREE: // 'beam-fixed-at-both-ends-uniform-distributed-load'
     results.positiveMoment = load * (length ** 2) / 24.0;
     results.negativeMoment = load * (length ** 2) / 12.0;
@@ -77,8 +77,23 @@ function calculateBeamLoadCombo(blc, beamInput) {
     results.deflection = (1 / 384.0) * (load / 12.0) * ((length * 12) ** 4) /
                          (inertia * elasticity);
     break;
+  case BLC_COMBO
+      .TWENTYFOUR: // 'beam-fixed-at-both-ends-concentrated-load-at-center'
+    results.positiveMoment = load * length / 8.0;
+    results.negativeMoment = load * length / 8.0;
+    results.shear = load / 2.0;
+    results.deflection =
+        load * ((length * 12) ** 3) / (192.0 * inertia * elasticity);
+    break;
   default:
     results = null;
+    return results;
+  }
+
+  // return `results` early if user input does not contain E or I values
+  if (!Number.isFinite(results.deflection)) {
+    results.deflection = null;
+    results.lOver = null;
     return results;
   }
 
@@ -119,6 +134,9 @@ function generateSmdData(blc, beamInput, results, points) {
   switch (blc) {
   case BLC_COMBO.ONE:
     smdData = makeBlcOne(beamInput, xPoints);
+    break;
+  case BLC_COMBO.FIVE:
+    smdData = makeBlcFive(beamInput, xPoints);
     break;
   case BLC_COMBO.SEVEN:
     smdData = makeBlcSeven(beamInput, xPoints);
@@ -174,6 +192,36 @@ function makeBlcOne(beamInput, xPoints) {
       shear : vi,
       moment : mi,
       deflection : di,
+    };
+    smdData.push(smd);
+  }
+  return smdData;
+}
+
+/**
+ * Generate shear, moment, and deflection beam data for beam-load case five.
+ * @param {Object} beamInput
+ * @param {number[]} xPoints
+ * @return {Object[]}
+ */
+function makeBlcFive(beamInput, xPoints) {
+  const smdData = [];
+  let totalLoad = beamInput.load * beamInput.length * 0.5;
+  for (const xi of xPoints) {
+    const vi = totalLoad * ((1 / 3.0) - ((xi ** 2) / (beamInput.length ** 2)))
+    const mi = ((totalLoad * xi) / (3.0 * (beamInput.length ** 2))) *
+               ((beamInput.length ** 2) - (xi ** 2));
+    const di = (totalLoad * xi /
+                (180.0 * beamInput.inertia * beamInput.elasticity *
+                 (beamInput.length ** 2))) * (12 ** 3) *
+               (3 * (xi ** 4) - (10 * (beamInput.length ** 2) * (xi ** 2)) +
+                (7 * (beamInput.length ** 4)));
+
+    const smd = {
+      beamLength : xi,
+      shear : vi,
+      moment : mi,
+      deflection: di,
     };
     smdData.push(smd);
   }

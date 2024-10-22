@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import blc1 from './assets/blc1.svg';
+import blc5 from './assets/blc5.svg';
 import blc7 from './assets/blc7.svg';
 import blc12 from './assets/blc12.svg';
 import blc13 from './assets/blc13.svg';
@@ -18,6 +19,9 @@ function BeamImage({ selection }) {
   switch(selection) {
   case '1':
     imageBeam = <img className="ImageContent" src={blc1}></img>;
+    break;
+  case '5':
+    imageBeam = <img className="ImageContent" src={blc5}></img>;
     break;
   case '7':
     imageBeam = <img className="ImageContent" src={blc7}></img>;
