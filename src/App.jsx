@@ -28,7 +28,7 @@ function App() {
   return (
     <>
       <Header />
-      <div className="MainContent">
+      <main className="MainContent">
           <div>
             <p>Shear Diagram, V (k)</p>
             <ShearPlot data={smdData} height={175}/>
@@ -56,7 +56,7 @@ function App() {
             ? <p style={{color: 'red'}}>Please enter a positive number.</p>
             : <ResultsTable maxMinResults={results} />}
         </div>
-      </div>
+      </main>
     </>
   );
 }
