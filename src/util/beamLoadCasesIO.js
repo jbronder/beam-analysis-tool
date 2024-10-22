@@ -28,9 +28,10 @@ function getInputs(blcCase) {
     ];
     break;
   case '5':
+  case '18a':
     specificInputs = [
       {
-        description : 'Max Uniform Load, w (k/ft): ',
+        description : 'Linear Load @ Max, w (k/ft): ',
         name : 'load',
       },
       {

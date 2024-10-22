@@ -5,6 +5,7 @@ import blc7 from './assets/blc7.svg';
 import blc12 from './assets/blc12.svg';
 import blc13 from './assets/blc13.svg';
 import blc15 from './assets/blc15.svg';
+import blc18a from './assets/blc18a.svg';
 import blc23 from './assets/blc23.svg';
 import blc24 from './assets/blc24.svg';
 import './BeamImage.css';
@@ -34,6 +35,9 @@ function BeamImage({ selection }) {
     break;
   case '15':
     imageBeam = <img className="ImageContent" src={blc15}></img>;
+    break;
+  case '18a':
+    imageBeam = <img className="ImageContent" src={blc18a}></img>;
     break;
   case '23':
     imageBeam = <img className="ImageContent" src={blc23}></img>;

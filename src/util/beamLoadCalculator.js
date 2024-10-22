@@ -10,6 +10,8 @@ const BLC_COMBO = {
   TWELVE : '12',   // 'cantilever-beam-uniform-distributed-load', 19 AISC
   THIRTEEN : '13', // 'cantilever-beam-concentrated-load-at-free-end', 22 AISC
   FIFTEEN : '15',  // 'beam-pin-fixed-uniform-distributed-load', 12 AISC
+  EIGHTEEN_A :
+      '18a', // 'cantilever-beam-linear-increasing-to-fixed-end', 18 AISC
   TWENTYTHREE :
       '23', // 'beam-fixed-at-both-ends-uniform-distributed-load', 15 AISC
   TWENTYFOUR :
@@ -30,6 +32,7 @@ function calculateBeamLoadCombo(blc, beamInput) {
 
   const {load, length, inertia, elasticity} = beamInput;
   let results = {};
+  let totalLoad = 0;
   switch (blc) {
   case BLC_COMBO.ONE: // 'simple-beam-uniform-distributed-load'
     results.positiveMoment = load * (length ** 2) / 8.0;
@@ -38,7 +41,7 @@ function calculateBeamLoadCombo(blc, beamInput) {
                          (1 / inertia) * (1 / elasticity);
     break;
   case BLC_COMBO.FIVE: // 'simple-beam-linear-increasing-uniform-load'
-    const totalLoad = (load * length * 0.5);
+    totalLoad = (load * length * 0.5);
     results.positiveMoment = 0.128 * totalLoad * length;
     results.shear = (2 / 3) * totalLoad;
     results.deflection =
@@ -68,6 +71,13 @@ function calculateBeamLoadCombo(blc, beamInput) {
     results.shear = (5 / 8.0) * (load * length); // max shear @ fixed support
     results.deflection =
         ((load / 12.0) * ((length * 12) ** 4)) / (185.0 * inertia * elasticity);
+    break;
+  case BLC_COMBO.EIGHTEEN_A: // 'cantilever-beam-linear-increasing-to-fixed-end'
+    totalLoad = (load * length * 0.5);
+    results.negativeMoment = (totalLoad * length / 3.0);
+    results.shear = totalLoad;
+    results.deflection =
+        totalLoad * ((length * 12) ** 3) / (15 * elasticity * inertia);
     break;
   case BLC_COMBO
       .TWENTYTHREE: // 'beam-fixed-at-both-ends-uniform-distributed-load'
@@ -150,6 +160,9 @@ function generateSmdData(blc, beamInput, results, points) {
   case BLC_COMBO.FIFTEEN:
     smdData = makeBlcFifteen(beamInput, xPoints);
     break;
+  case BLC_COMBO.EIGHTEEN_A:
+    smdData = makeBlcEighteenA(beamInput, xPoints);
+    break;
   case BLC_COMBO.TWENTYTHREE:
     smdData = makeBlcTwentyThree(beamInput, xPoints);
     break;
@@ -213,7 +226,8 @@ function makeBlcFive(beamInput, xPoints) {
                ((beamInput.length ** 2) - (xi ** 2));
     const di = (totalLoad * xi /
                 (180.0 * beamInput.inertia * beamInput.elasticity *
-                 (beamInput.length ** 2))) * (12 ** 3) *
+                 (beamInput.length ** 2))) *
+               (12 ** 3) *
                (3 * (xi ** 4) - (10 * (beamInput.length ** 2) * (xi ** 2)) +
                 (7 * (beamInput.length ** 4)));
 
@@ -221,7 +235,7 @@ function makeBlcFive(beamInput, xPoints) {
       beamLength : xi,
       shear : vi,
       moment : mi,
-      deflection: di,
+      deflection : di,
     };
     smdData.push(smd);
   }
@@ -343,6 +357,36 @@ function makeBlcFifteen(beamInput, xPoints) {
                 ((beamInput.length ** 3) - 3 * beamInput.length * (xi ** 2) +
                  (2 * (xi ** 3)))) /
                (48.0 * beamInput.inertia * beamInput.elasticity);
+
+    const smd = {
+      beamLength : xi,
+      shear : vi,
+      moment : mi,
+      deflection : di,
+    };
+    smdData.push(smd);
+  }
+  return smdData;
+}
+
+/**
+ * Generate shear, moment, and deflection beam data for beam-load case 18A.
+ * @param {Object} beamInput
+ * @param {number[]} xPoints
+ * @return {Object[]}
+ */
+function makeBlcEighteenA(beamInput, xPoints) {
+  const smdData = [];
+
+  const totalLoad = beamInput.load * beamInput.length * 0.5;
+  for (const xi of xPoints) {
+    const vi = totalLoad * ((xi ** 2) / (beamInput.length ** 2))
+    const mi = totalLoad * ((xi ** 3) / (3 * (beamInput.length ** 2)));
+    const di = totalLoad * (12 ** 3) /
+               (60 * beamInput.elasticity * beamInput.inertia *
+                (beamInput.length ** 2)) *
+               ((xi ** 5) - (5 * (beamInput.length ** 4) * xi) +
+                (4 * (beamInput.length ** 5)));
 
     const smd = {
       beamLength : xi,
