@@ -33,6 +33,7 @@ function BeamLoadComboBox({ onComboSelect }) {
               <SelectItem value="12">Cantilever Beam - Uniform Distributed Load</SelectItem>
               <SelectItem value="13">Cantilever Beam - Concentrated Load At Free End</SelectItem>
               <SelectItem value="15">Beam Pin-Fixed Ends - Uniform Distributed Load</SelectItem>
+              <SelectItem value="16">Beam Pin-Fixed Ends - Concentrated Load At Center</SelectItem>
               <SelectItem value="18a">Cantilever Beam - Linear Increasing Load to Fixed End</SelectItem>
               <SelectItem value="23">Beam Fixed At Both Ends - Uniform Distributed Load</SelectItem>
               <SelectItem value="24">Beam Fixed At Both Ends - Concentrated Load At Center</SelectItem>

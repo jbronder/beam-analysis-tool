@@ -10,6 +10,7 @@ const BLC_COMBO = {
   TWELVE : '12',   // 'cantilever-beam-uniform-distributed-load', 19 AISC
   THIRTEEN : '13', // 'cantilever-beam-concentrated-load-at-free-end', 22 AISC
   FIFTEEN : '15',  // 'beam-pin-fixed-uniform-distributed-load', 12 AISC
+  SIXTEEN : '16',  // 'beam-pin-fixed-concentrated-load-at-center', 13 AISC
   EIGHTEEN_A :
       '18a', // 'cantilever-beam-linear-increasing-to-fixed-end', 18 AISC
   TWENTYTHREE :
@@ -71,6 +72,13 @@ function calculateBeamLoadCombo(blc, beamInput) {
     results.shear = (5 / 8.0) * (load * length); // max shear @ fixed support
     results.deflection =
         ((load / 12.0) * ((length * 12) ** 4)) / (185.0 * inertia * elasticity);
+    break;
+  case BLC_COMBO.SIXTEEN: // 'beam-pin-fixed-concentrated-load-at-center'
+    results.positiveMoment = (5 * load * length) / 32.0;
+    results.negativeMoment = (3 * load * length) / 16.0;
+    results.shear = (11 / 16.0) * load; // @ fixed support
+    results.deflection =
+        0.009317 * (load * ((length * 12) ** 3) / (elasticity * inertia));
     break;
   case BLC_COMBO.EIGHTEEN_A: // 'cantilever-beam-linear-increasing-to-fixed-end'
     totalLoad = (load * length * 0.5);
@@ -159,6 +167,9 @@ function generateSmdData(blc, beamInput, results, points) {
     break;
   case BLC_COMBO.FIFTEEN:
     smdData = makeBlcFifteen(beamInput, xPoints);
+    break;
+  case BLC_COMBO.SIXTEEN:
+    smdData = makeBlcSixteen(beamInput, xPoints);
     break;
   case BLC_COMBO.EIGHTEEN_A:
     smdData = makeBlcEighteenA(beamInput, xPoints);
@@ -357,6 +368,44 @@ function makeBlcFifteen(beamInput, xPoints) {
                 ((beamInput.length ** 3) - 3 * beamInput.length * (xi ** 2) +
                  (2 * (xi ** 3)))) /
                (48.0 * beamInput.inertia * beamInput.elasticity);
+
+    const smd = {
+      beamLength : xi,
+      shear : vi,
+      moment : mi,
+      deflection : di,
+    };
+    smdData.push(smd);
+  }
+  return smdData;
+}
+
+/**
+ * Generate shear, moment, and deflection beam data for beam-load case sixteen.
+ * @param {Object} beamInput
+ * @param {number[]} xPoints
+ * @return {Object[]}
+ */
+function makeBlcSixteen(beamInput, xPoints) {
+  const smdData = [];
+
+  for (const xi of xPoints) {
+    let vi = 0;
+    let mi = 0;
+    let di = 0;
+    if (xi < beamInput.length / 2) {
+      vi = (5.0 / 16.0) * beamInput.load;
+      mi = (5.0 * beamInput.load * xi / 16);
+      di = ((beamInput.load * xi) * (12 ** 3) /
+            (96 * beamInput.elasticity * beamInput.inertia)) *
+           ((3 * beamInput.length ** 2) - (5 * (xi ** 2)));
+    } else {
+      vi = (11.0 / 16.0) * (-beamInput.load);
+      mi = beamInput.load * ((beamInput.length / 2) - (11.0 * xi / 16.0));
+      di = (beamInput.load * (12 ** 3) /
+            (96 * beamInput.elasticity * beamInput.inertia)) *
+           ((xi - beamInput.length) ** 2) * (11 * xi - 2 * beamInput.length);
+    }
 
     const smd = {
       beamLength : xi,

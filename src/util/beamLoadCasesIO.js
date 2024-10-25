@@ -42,6 +42,7 @@ function getInputs(blcCase) {
     break;
   case '7':
   case '13':
+  case '16':
   case '24':
     specificInputs = [
       {
