@@ -52,7 +52,7 @@ function ResultsTable({ maxMinResults }) {
           units={"in."}
         />
         : ""}
-      {maxMinResults.lOver 
+      {(maxMinResults.lOver && Number.isFinite(maxMinResults.lOver))
         ? <OutputRow
           labelName={"'L-over' Value: "}
           result={maxMinResults.lOver}
